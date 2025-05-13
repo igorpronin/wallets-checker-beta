@@ -1,6 +1,16 @@
 const ethers = require('ethers');
 const cron = require('node-cron');
 
+// Add addresses of tokens you want to check
+const tokenAddresses = {
+  'USDC': {
+    addr: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    _balance: 0,
+    balance: 0,
+  },
+  // Add more tokens as needed
+};
+
 // ABI for ERC20 token balance function
 const ERC20_ABI = [
   {
@@ -20,7 +30,7 @@ const ERC20_ABI = [
 ];
 
 // Replace with your Infura project ID or other provider URL
-const provider = new ethers.JsonRpcProvider('https://rpc.ankr.com/eth');
+const provider = new ethers.JsonRpcProvider('https://eth.llamarpc.com');
 
 function getCurrentDateTime() {
   return new Date().toLocaleString();
@@ -45,15 +55,13 @@ async function checkWallet(walletAddress) {
     // const ethBalance = await getEthBalance(walletAddress);
     // console.log(`ETH Balance: ${ethBalance} ETH`);
 
-    // Add addresses of tokens you want to check
-    const tokenAddresses = {
-      'USDC': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-      // Add more tokens as needed
-    };
-
     for (const [tokenName, tokenAddress] of Object.entries(tokenAddresses)) {
-      const tokenBalance = await getTokenBalance(tokenAddress, walletAddress);
-      console.log(`[${getCurrentDateTime()}] ${tokenName} Balance: ${tokenBalance} ${tokenName}`);
+      const tokenBalance = await getTokenBalance(tokenAddress.addr, walletAddress);
+      tokenAddress._balance = tokenAddress.balance;
+      tokenAddress.balance = tokenBalance;
+      if (tokenAddress._balance !== tokenAddress.balance) {
+        console.log(`[${getCurrentDateTime()}] ${tokenName} Balance: ${tokenBalance} ${tokenName}`);
+      }
     }
   } catch (error) {
     console.error('Error checking wallet:', error);
@@ -64,7 +72,7 @@ async function checkWallet(walletAddress) {
 const walletToCheck = '0x2F1f7FC76e6CF5ab3e186A2A2FD4Fc31952a77Cc';
 
 // Schedule the task to run every 10 minutes
-cron.schedule('*/10 * * * *', () => {
+cron.schedule('* * * * *', () => {
   checkWallet(walletToCheck);
 });
 
